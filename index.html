@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FamilySplit">
+<meta name="theme-color" content="#0e0f14">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>FamilySplit</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0f14;
+  --surface: #16181f;
+  --surface2: #1e2029;
+  --border: #2a2d38;
+  --accent: #f0c060;
+  --accent2: #e07a40;
+  --text: #e8eaf0;
+  --muted: #6b7080;
+  --green: #5ddba0;
+  --red: #f07070;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Manrope', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── APP SHELL ── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bot);
+}
+
+/* ── HEADER ── */
+header {
+  flex-shrink: 0;
+  padding: 16px 20px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.logo span { color: var(--accent); }
+
+.header-sub {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.btn-reset {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+/* ── TABS ── */
+nav {
+  flex-shrink: 0;
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 8px;
+}
+
+.tab {
+  flex: 1;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  user-select: none;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── SCROLL AREA ── */
+.page {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 16px 24px;
+  display: none;
+}
+.page.active { display: block; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.card-body { padding: 14px 16px; }
+
+.field-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+input[type="text"],
+input[type="number"] {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Manrope', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 10px 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+input:focus { border-color: var(--accent); }
+input[type="number"] { text-align: center; }
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+
+.shares-row {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.shares-badge {
+  background: rgba(240,192,96,0.15);
+  border: 1px solid rgba(240,192,96,0.3);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* ── REMOVE BTN ── */
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 0;
+}
+.card-name-badge {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+.btn-x {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 16px;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.btn-x:active { border-color: var(--red); color: var(--red); }
+
+/* ── CHIPS ── */
+.chips-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 12px 0 6px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.chip {
+  border-radius: 20px;
+  padding: 5px 13px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.chip.active-yellow {
+  background: rgba(240,192,96,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.chip.active-orange {
+  background: rgba(224,122,64,0.15);
+  border-color: var(--accent2);
+  color: var(--accent2);
+}
+
+/* ── ADD BTN ── */
+.btn-add {
+  background: transparent;
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 14px;
+  width: 100%;
+  margin-bottom: 12px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-add:active { border-color: var(--accent); color: var(--accent); }
+
+/* ── CALC BTN ── */
+.btn-calc {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  border-radius: 14px;
+  color: #0e0f14;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 16px;
+  width: 100%;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-calc:active { transform: scale(0.97); opacity: 0.85; }
+
+/* ── RESULTS ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.stat-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 10px;
+  text-align: center;
+}
+.stat-label { font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-value { font-family: 'Unbounded', sans-serif; font-size: 14px; font-weight: 900; color: var(--accent); margin-top: 4px; }
+
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.result-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 13px 16px;
+  background: rgba(240,192,96,0.05);
+  border-bottom: 1px solid var(--border);
+}
+.result-family { font-family: 'Unbounded', sans-serif; font-size: 12px; font-weight: 700; }
+.result-meta { font-size: 10px; color: var(--muted); margin-top: 3px; }
+.result-amount { font-family: 'Unbounded', sans-serif; font-size: 16px; font-weight: 900; color: var(--accent); text-align: right; }
+.result-diff { font-size: 10px; margin-top: 2px; text-align: right; font-weight: 700; }
+
+.result-rows { padding: 10px 16px; display: flex; flex-direction: column; gap: 6px; }
+.result-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.result-row-name { color: var(--muted); flex: 1; padding-right: 10px; }
+.result-row-amt { font-weight: 700; flex-shrink: 0; }
+
+/* Settlements */
+.section-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 20px 0 10px;
+}
+
+.settle-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.settle-from { font-weight: 700; color: var(--red); flex: 1; }
+.settle-arrow { color: var(--muted); font-size: 16px; }
+.settle-to { font-weight: 700; color: var(--green); flex: 1; text-align: center; }
+.settle-amount { font-family: 'Unbounded', sans-serif; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+
+.no-settle {
+  background: rgba(93,219,160,0.08);
+  border: 1px solid rgba(93,219,160,0.2);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  color: var(--green);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* ── INSTALL BANNER ── */
+#install-banner {
+  display: none;
+  background: linear-gradient(135deg, rgba(240,192,96,0.15), rgba(224,122,64,0.1));
+  border: 1px solid rgba(240,192,96,0.3);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: center;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate { animation: slideUp 0.25s ease forwards; }
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+.empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: calc(80px + var(--safe-bot));
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 999;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  flex-shrink: 0;
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding-bottom: var(--safe-bot);
+}
+.bnav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px 8px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  gap: 4px;
+  transition: color 0.15s;
+  user-select: none;
+}
+.bnav-item.active { color: var(--accent); }
+.bnav-icon { font-size: 20px; line-height: 1; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div>
+      <div class="logo">Family<span>Split</span></div>
+      <div class="header-sub">Делим честно, с учётом семьи</div>
+    </div>
+    <button class="btn-reset" onclick="resetAll()">Сброс</button>
+  </header>
+
+  <!-- Families page -->
+  <div class="page active" id="page-families">
+    <div id="install-banner" onclick="installPWA()">
+      📲 Добавить на экран iPhone
+    </div>
+    <div id="families-list"></div>
+    <button class="btn-add" onclick="addFamily()">＋ Добавить семью</button>
+    <div style="font-size:11px; color:var(--muted); text-align:center; padding: 0 8px;">
+      Взрослый = 1 доля · Ребёнок = 0.5 доли
+    </div>
+  </div>
+
+  <!-- Expenses page -->
+  <div class="page" id="page-expenses">
+    <div id="expenses-list"></div>
+    <button class="btn-add" onclick="addExpense()">＋ Добавить расход</button>
+  </div>
+
+  <!-- Results page -->
+  <div class="page" id="page-results">
+    <button class="btn-calc" onclick="calculate()">⚡ Рассчитать</button>
+    <div id="results-content"></div>
+  </div>
+
+  <nav class="bottom-nav">
+    <div class="bnav-item active" onclick="switchPage('families')" id="bnav-families">
+      <div class="bnav-icon">👨‍👩‍👧</div>
+      <div>Семьи</div>
+    </div>
+    <div class="bnav-item" onclick="switchPage('expenses')" id="bnav-expenses">
+      <div class="bnav-icon">💸</div>
+      <div>Расходы</div>
+    </div>
+    <div class="bnav-item" onclick="switchPage('results')" id="bnav-results">
+      <div class="bnav-icon">📊</div>
+      <div>Итог</div>
+    </div>
+  </nav>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──
+let families = JSON.parse(localStorage.getItem('fs_families') || '[]');
+let expenses = JSON.parse(localStorage.getItem('fs_expenses') || '[]');
+let familyCounter = JSON.parse(localStorage.getItem('fs_fc') || '0');
+let expenseCounter = JSON.parse(localStorage.getItem('fs_ec') || '0');
+
+function save() {
+  localStorage.setItem('fs_families', JSON.stringify(families));
+  localStorage.setItem('fs_expenses', JSON.stringify(expenses));
+  localStorage.setItem('fs_fc', JSON.stringify(familyCounter));
+  localStorage.setItem('fs_ec', JSON.stringify(expenseCounter));
+}
+
+// ── NAVIGATION ──
+function switchPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('bnav-' + name).classList.add('active');
+  if (name === 'expenses') renderExpenses();
+}
+
+// ── HELPERS ──
+function getShares(f) {
+  return (f.adults || 0) + (f.children || 0) * 0.5;
+}
+
+function fmt(n) {
+  return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(Math.round(n)) + ' ₽';
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── FAMILIES ──
+function addFamily() {
+  familyCounter++;
+  families.push({ id: familyCounter, name: '', adults: 2, children: 0 });
+  save();
+  renderFamilies();
+  toast('Семья добавлена');
+}
+
+function removeFamily(id) {
+  families = families.filter(f => f.id !== id);
+  expenses.forEach(e => {
+    e.payers = (e.payers||[]).filter(p => p !== id);
+    e.participants = (e.participants||[]).filter(p => p !== id);
+  });
+  save();
+  renderFamilies();
+}
+
+function updateFamily(id, field, value) {
+  const f = families.find(f => f.id === id);
+  if (!f) return;
+  f[field] = field === 'name' ? value : parseFloat(value) || 0;
+  save();
+  const badge = document.getElementById('sb-' + id);
+  if (badge) badge.textContent = getShares(f);
+  const nameEl = document.getElementById('fn-' + id);
+  if (nameEl) nameEl.textContent = f.name || `Семья ${f.id}`;
+}
+
+function renderFamilies() {
+  const list = document.getElementById('families-list');
+  if (families.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">👨‍👩‍👧‍👦</div>Добавь семьи для расчёта</div>`;
+    return;
+  }
+  list.innerHTML = families.map(f => `
+    <div class="card animate" id="fcard-${f.id}">
+      <div class="card-top">
+        <span class="card-name-badge" id="fn-${f.id}">${f.name || `Семья ${f.id}`}</span>
+        <button class="btn-x" onclick="removeFamily(${f.id})">×</button>
+      </div>
+      <div class="card-body">
+        <div>
+          <div class="field-label">Название семьи</div>
+          <input type="text" placeholder="Ивановы" value="${f.name}"
+            oninput="updateFamily(${f.id},'name',this.value)">
+        </div>
+        <div class="row2">
+          <div>
+            <div class="field-label">Взрослых</div>
+            <input type="number" min="0" max="20" value="${f.adults}"
+              oninput="updateFamily(${f.id},'adults',this.value)">
+          </div>
+          <div>
+            <div class="field-label">Детей</div>
+            <input type="number" min="0" max="20" value="${f.children}"
+              oninput="updateFamily(${f.id},'children',this.value)">
+          </div>
+        </div>
+        <div class="shares-row">
+          Долей: <span class="shares-badge" id="sb-${f.id}">${getShares(f)}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── EXPENSES ──
+function addExpense() {
+  if (families.length === 0) { toast('Сначала добавь семьи!'); switchPage('families'); return; }
+  expenseCounter++;
+  expenses.push({
+    id: expenseCounter,
+    name: '',
+    amount: '',
+    payers: [],
+    participants: families.map(f => f.id)
+  });
+  save();
+  renderExpenses();
+  toast('Расход добавлен');
+}
+
+function removeExpense(id) {
+  expenses = expenses.filter(e => e.id !== id);
+  save();
+  renderExpenses();
+}
+
+function updateExpense(id, field, value) {
+  const e = expenses.find(e => e.id === id);
+  if (e) { e[field] = field === 'name' ? value : parseFloat(value) || 0; save(); }
+}
+
+function togglePayer(eid, fid) {
+  const e = expenses.find(e => e.id === eid);
+  if (!e) return;
+  const idx = e.payers.indexOf(fid);
+  if (idx >= 0) e.payers.splice(idx, 1); else e.payers.push(fid);
+  save();
+  renderExpenses();
+}
+
+function toggleParticipant(eid, fid) {
+  const e = expenses.find(e => e.id === eid);
+  if (!e) return;
+  const idx = e.participants.indexOf(fid);
+  if (idx >= 0) e.participants.splice(idx, 1); else e.participants.push(fid);
+  save();
+  renderExpenses();
+}
+
+function renderExpenses() {
+  const list = document.getElementById('expenses-list');
+  if (expenses.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">💸</div>Нет расходов. Добавь первый!</div>`;
+    return;
+  }
+  list.innerHTML = expenses.map(e => {
+    const payerChips = families.map(f => {
+      const active = e.payers.includes(f.id) ? 'active-orange' : '';
+      return `<span class="chip ${active}" onclick="togglePayer(${e.id},${f.id})">${f.name || `Сем.${f.id}`}</span>`;
+    }).join('');
+    const partChips = families.map(f => {
+      const active = e.participants.includes(f.id) ? 'active-yellow' : '';
+      return `<span class="chip ${active}" onclick="toggleParticipant(${e.id},${f.id})">${f.name || `Сем.${f.id}`}</span>`;
+    }).join('');
+    return `
+    <div class="card animate">
+      <div class="card-top">
+        <span class="card-name-badge">${e.name || 'Расход'}</span>
+        <button class="btn-x" onclick="removeExpense(${e.id})">×</button>
+      </div>
+      <div class="card-body">
+        <div>
+          <div class="field-label">Название</div>
+          <input type="text" placeholder="Аренда, продукты..." value="${e.name}"
+            oninput="updateExpense(${e.id},'name',this.value)">
+        </div>
+        <div style="margin-top:10px;">
+          <div class="field-label">Сумма (₽)</div>
+          <input type="number" min="0" placeholder="0" value="${e.amount || ''}"
+            oninput="updateExpense(${e.id},'amount',this.value)">
+        </div>
+        <div class="chips-label">💳 Кто оплатил</div>
+        <div class="chips">${payerChips || '<span style="color:var(--muted);font-size:12px;">Добавь семьи</span>'}</div>
+        <div class="chips-label">👥 Кто участвует</div>
+        <div class="chips">${partChips || '<span style="color:var(--muted);font-size:12px;">Добавь семьи</span>'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── CALCULATE ──
+function calculate() {
+  if (families.length < 2) { toast('Нужно минимум 2 семьи'); switchPage('families'); return; }
+  if (expenses.length === 0) { toast('Добавь хотя бы 1 расход'); switchPage('expenses'); return; }
+
+  const balance = {};
+  families.forEach(f => balance[f.id] = 0);
+
+  let totalSum = 0;
+  const breakdown = {};
+  families.forEach(f => breakdown[f.id] = []);
+
+  expenses.forEach(e => {
+    if (!e.amount || e.amount <= 0) return;
+    totalSum += e.amount;
+    const parts = e.participants.length ? e.participants : families.map(f => f.id);
+    const totalShares = parts.reduce((s, fid) => {
+      const fam = families.find(f => f.id === fid);
+      return s + (fam ? getShares(fam) : 0);
+    }, 0);
+    if (totalShares === 0) return;
+    const perShare = e.amount / totalShares;
+    parts.forEach(fid => {
+      const fam = families.find(f => f.id === fid);
+      if (!fam) return;
+      const owes = getShares(fam) * perShare;
+      balance[fid] -= owes;
+      breakdown[fid].push({ name: e.name || 'Расход', amount: owes });
+    });
+    if (e.payers.length > 0) {
+      const perPayer = e.amount / e.payers.length;
+      e.payers.forEach(fid => { balance[fid] += perPayer; });
+    }
+  });
+
+  const totalShares = families.reduce((s, f) => s + getShares(f), 0);
+
+  // Stats
+  let html = `
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-label">Сумма</div><div class="stat-value">${fmt(totalSum)}</div></div>
+      <div class="stat-box"><div class="stat-label">Долей</div><div class="stat-value">${totalShares}</div></div>
+      <div class="stat-box"><div class="stat-label">1 доля</div><div class="stat-value">${totalShares > 0 ? fmt(totalSum/totalShares) : '—'}</div></div>
+    </div>
+    <div class="section-title">📊 По семьям</div>`;
+
+  // Family cards
+  families.forEach(f => {
+    const shouldPay = breakdown[f.id].reduce((s, x) => s + x.amount, 0);
+    const diff = balance[f.id];
+    const diffColor = diff >= 0 ? 'var(--green)' : 'var(--red)';
+    const diffText = diff > 0.01 ? `+${fmt(diff)} переплатил` : diff < -0.01 ? `${fmt(diff)} доплатить` : '✓ Расчёт верный';
+    const rows = breakdown[f.id].map(x => `
+      <div class="result-row">
+        <span class="result-row-name">${x.name}</span>
+        <span class="result-row-amt">${fmt(x.amount)}</span>
+      </div>`).join('');
+    html += `
+    <div class="result-card">
+      <div class="result-header">
+        <div>
+          <div class="result-family">${f.name || `Семья ${f.id}`}</div>
+          <div class="result-meta">${getShares(f)} долей · ${f.adults} взр + ${f.children} дет</div>
+        </div>
+        <div>
+          <div class="result-amount">${fmt(shouldPay)}</div>
+          <div class="result-diff" style="color:${diffColor}">${diffText}</div>
+        </div>
+      </div>
+      <div class="result-rows">${rows || '<div style="color:var(--muted);font-size:12px;">Не участвует</div>'}</div>
+    </div>`;
+  });
+
+  // Settlements
+  const debtors = families.filter(f => balance[f.id] < -0.01)
+    .map(f => ({ name: f.name || `Семья ${f.id}`, amount: Math.abs(balance[f.id]) }));
+  const creditors = families.filter(f => balance[f.id] > 0.01)
+    .map(f => ({ name: f.name || `Семья ${f.id}`, amount: balance[f.id] }));
+
+  const settles = [];
+  let i = 0, j = 0;
+  while (i < debtors.length && j < creditors.length) {
+    const pay = Math.min(debtors[i].amount, creditors[j].amount);
+    if (pay > 0.01) settles.push({ from: debtors[i].name, to: creditors[j].name, amount: pay });
+    debtors[i].amount -= pay;
+    creditors[j].amount -= pay;
+    if (debtors[i].amount < 0.01) i++;
+    if (creditors[j].amount < 0.01) j++;
+  }
+
+  html += `<div class="section-title">💳 Кто кому платит</div>`;
+  if (settles.length === 0) {
+    html += `<div class="no-settle">✓ Все в расчёте!</div>`;
+  } else {
+    html += settles.map(s => `
+      <div class="settle-item">
+        <span class="settle-from">${s.from}</span>
+        <span class="settle-arrow">→</span>
+        <span class="settle-to">${s.to}</span>
+        <span class="settle-amount">${fmt(s.amount)}</span>
+      </div>`).join('');
+  }
+
+  document.getElementById('results-content').innerHTML = html;
+  toast('Готово! 🎉');
+}
+
+// ── RESET ──
+function resetAll() {
+  if (!confirm('Сбросить всё?')) return;
+  families = []; expenses = []; familyCounter = 0; expenseCounter = 0;
+  save();
+  renderFamilies();
+  renderExpenses();
+  document.getElementById('results-content').innerHTML = '';
+  toast('Сброшено');
+}
+
+// ── PWA INSTALL ──
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').style.display = 'block';
+});
+
+function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      document.getElementById('install-banner').style.display = 'none';
+    });
+  } else {
+    toast('На iPhone: Поделиться → На экран «Домой»');
+  }
+}
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ── INIT ──
+if (families.length === 0) {
+  // Example data
+  familyCounter = 3;
+  expenseCounter = 2;
+  families = [
+    { id: 1, name: 'Ивановы', adults: 2, children: 2 },
+    { id: 2, name: 'Петровы', adults: 2, children: 0 },
+    { id: 3, name: 'Сидоровы', adults: 2, children: 3 },
+  ];
+  expenses = [
+    { id: 1, name: 'Аренда дачи', amount: 15000, payers: [1], participants: [1,2,3] },
+    { id: 2, name: 'Продукты', amount: 8000, payers: [2], participants: [1,2,3] },
+  ];
+  save();
+}
+
+renderFamilies();
+renderExpenses();
+</script>
+</body>
+</html>

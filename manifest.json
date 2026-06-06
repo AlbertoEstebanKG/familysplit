@@ -1,0 +1,14 @@
+{
+  "name": "FamilySplit",
+  "short_name": "FamilySplit",
+  "description": "Делим расходы честно — с учётом размера каждой семьи",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0e0f14",
+  "theme_color": "#f0c060",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
