@@ -1,0 +1,38 @@
+# Ежедневный запрос к Supabase, чтобы бесплатный проект не засыпал
+# (Supabase приостанавливает бесплатные проекты после 7 дней без активности).
+name: supabase-keepalive
+
+on:
+  schedule:
+    - cron: '17 3 * * *'   # каждый день в 03:17 UTC (09:17 по Бишкеку)
+  workflow_dispatch:        # можно запустить вручную: Actions → supabase-keepalive → Run workflow
+
+permissions:
+  actions: write            # чтобы продлевать само расписание (см. последний шаг)
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Запрос к базе FamilySplit
+        run: |
+          URL=$(grep -oP "SUPABASE_URL = '\K[^']+" <(curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/js/config.js"))
+          KEY=$(grep -oP "SUPABASE_ANON_KEY = '\K[^']+" <(curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/js/config.js"))
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/out -w '%{http_code}' -X POST "$URL/rest/v1/rpc/fs_get_event" \
+              -H "apikey: $KEY" -H "Content-Type: application/json" \
+              -d '{"p_id":"00000000000000000000000000000000"}')
+            echo "HTTP $code: $(cat /tmp/out)"
+            [ "$code" = "200" ] && exit 0
+            sleep 20
+          done
+          echo "::error::Supabase не ответил. Возможно, проект приостановлен — откройте supabase.com и нажмите Restore."
+          exit 1
+
+      # GitHub отключает расписания в репозиториях без коммитов 60 дней —
+      # повторное включение через API сбрасывает этот счётчик.
+      - name: Не дать GitHub отключить расписание
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/keepalive.yml/enable" || true
