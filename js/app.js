@@ -267,7 +267,7 @@ function renderEvent(ev) {
       <button class="icon-btn" data-a="home" aria-label="${t('back')}">←</button>
       <div class="event-title">
         <div class="event-title-name">${esc(ev.meta.name || t('untitled'))} ${syncBadge(ev.id)}</div>
-        <div class="event-title-sub">${money(r.total, ev.meta.currency)} · ${plural('days', ev.meta.days)}</div>
+        <div class="event-title-sub">${money(r.total, ev.meta.currency)} · ${ev.meta.days > 1 ? plural('days', ev.meta.days) : esc(fmtDate(dayDates(ev.meta)[0], { day: 'numeric', month: 'long' }))}</div>
       </div>
       <button class="icon-btn" data-a="share" aria-label="${t('share')}">⤴</button>
       <button class="icon-btn" data-a="settings" aria-label="${t('settings')}">⚙</button>
@@ -517,6 +517,16 @@ function renderSheet(first = false) {
 function field(label, inner, hint = '') {
   return `<label class="field"><span class="field-l">${label}</span>${inner}${hint ? `<span class="hint">${hint}</span>` : ''}</label>`;
 }
+/** Дата мероприятия; длительность — только если включить «Несколько дней». */
+function dateFields(d) {
+  const multi = d.days > 1;
+  const date = `<input type="date" data-bind="startDate" value="${esc(d.startDate)}">`;
+  return `
+    ${multi ? `<div class="row2">${field(t('startDate'), date)}${field(t('daysCount'), stepper('days', d.days, 2))}</div>`
+      : field(t('date'), date)}
+    <button class="link small days-toggle" data-a="toggleMultiDay">${multi ? t('oneDay') : t('severalDays')}</button>`;
+}
+
 function currencyOptions(selected, extra = []) {
   const list = [...new Set([selected, ...extra, ...Object.keys(CURRENCIES)])].filter(Boolean);
   return list.map((c) => `<option value="${c}" ${c === selected ? 'selected' : ''}>${c}</option>`).join('');
@@ -541,10 +551,7 @@ const SHEETS = {
             <span class="kind-ic">🎣</span><b>${t('kindFriends')}</b><small>${t('kindFriendsHint')}</small></button>
         </div>
         ${field(t('eventName'), `<input type="text" data-bind="name" value="${esc(d.name)}" placeholder="${d.kind === 'friends' ? t('eventNamePhFriends') : t('eventNamePh')}" maxlength="80">`)}
-        <div class="row2">
-          ${field(t('startDate'), `<input type="date" data-bind="startDate" value="${esc(d.startDate)}">`)}
-          ${field(t('daysCount'), stepper('days', d.days))}
-        </div>
+        ${dateFields(d)}
         ${field(t('baseCurrency'), `<select data-bind="currency">${currencyOptions(d.currency)}</select>`, t('baseCurrencyHint'))}`,
       footer: `<button class="btn primary wide" data-a="createEvent">${t('create')}</button>`,
     };
@@ -566,10 +573,7 @@ const SHEETS = {
       title: t('settings'),
       body: `
         ${field(t('eventName'), `<input type="text" data-bind="name" value="${esc(d.name)}" maxlength="80">`)}
-        <div class="row2">
-          ${field(t('startDate'), `<input type="date" data-bind="startDate" value="${esc(d.startDate)}">`)}
-          ${field(t('daysCount'), stepper('days', d.days))}
-        </div>
+        ${dateFields(d)}
         ${field(t('baseCurrency'), `<select data-bind="currency" data-rerender="1">${currencyOptions(d.currency)}</select>`)}
         ${isFriends(ev) ? '' : `<div class="sub-title">${t('coefsTitle')}</div>
         <p class="hint">${t('coefsHint')}</p>
@@ -873,6 +877,7 @@ const A = {
 
   newEvent() { openSheet({ type: 'newEvent', draft: { kind: 'families', name: '', startDate: todayISO(), days: 1, currency: 'KGS' } }); },
   setKind(el) { S.draft.kind = el.dataset.kind; renderSheet(); },
+  toggleMultiDay() { S.draft.days = S.draft.days > 1 ? 1 : 2; renderSheet(); },
   createEvent() {
     const d = S.draft;
     const ev = store.createEvent({ kind: d.kind, name: d.name.trim() || t('untitled'), startDate: d.startDate, days: Math.max(1, d.days | 0), currency: d.currency });

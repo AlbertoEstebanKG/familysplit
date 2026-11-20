@@ -4,6 +4,9 @@
 export const LANGS = ['ru', 'ky', 'en'];
 
 const RU = {
+  date: 'Дата',
+  severalDays: '＋ Несколько дней',
+  oneDay: 'Один день',
   hero5: '🎣 Простой режим для друзей: рыбалка, баня, шашлыки — всё поровну',
   kindTitle: 'Кто участвует',
   kindFamilies: 'Семьи',
@@ -232,6 +235,9 @@ const RU = {
 };
 
 const EN = {
+  date: 'Date',
+  severalDays: '＋ Several days',
+  oneDay: 'Single day',
   hero5: '🎣 Simple mode for friends: fishing, sauna, BBQ — split equally',
   kindTitle: 'Who is going',
   kindFamilies: 'Families',
@@ -460,6 +466,9 @@ const EN = {
 };
 
 const KY = {
+  date: 'Күнү',
+  severalDays: '＋ Бир нече күн',
+  oneDay: 'Бир күн',
   hero5: '🎣 Достор үчүн жөнөкөй режим: балык уулоо, мончо, шашлык — баары тең',
   kindTitle: 'Ким катышат',
   kindFamilies: 'Үй-бүлөлөр',
