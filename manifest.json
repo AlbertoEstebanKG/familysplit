@@ -1,14 +1,18 @@
 {
-  "name": "FamilySplit",
+  "name": "FamilySplit — расходы семей",
   "short_name": "FamilySplit",
-  "description": "Делим расходы честно — с учётом размера каждой семьи",
-  "start_url": "/index.html",
+  "description": "Делим расходы между семьями честно: с учётом детей, дней присутствия и валют",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#0e0f14",
-  "theme_color": "#f0c060",
+  "background_color": "#f5f3ee",
+  "theme_color": "#c97a06",
   "orientation": "portrait",
+  "lang": "ru",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
