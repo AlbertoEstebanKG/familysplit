@@ -158,3 +158,19 @@ test('splitExpense: нулевые веса (только малыш) — оши
   const r = splitExpense(d, { id: 'z', amount: 100, cur: 'KGS', paid: { A: 100 }, mode: 'shares', parts: ['c3'] });
   assert.equal(r.error, 'noParticipants');
 });
+
+test('режим «Друзья»: каждый участник — один человек, поровну и по долям', () => {
+  let d = newEvent({ name: 'Рыбалка', days: 2, kind: 'friends' });
+  assert.equal(d.meta.kind, 'friends');
+  for (const [id, days] of [['A', null], ['B', null], ['C', [0]]]) {
+    d = put(d, 'families', { id, name: id });
+    d = put(d, 'members', { id: 'm' + id, familyId: id, name: id, cat: 'adult', days });
+  }
+  d = put(d, 'expenses', { id: 'e1', title: 'Бензин', amount: 3000, cur: 'KGS', paid: { A: 3000 }, mode: 'person' });
+  d = put(d, 'expenses', { id: 'e2', title: 'Пиво', amount: 1500, cur: 'KGS', paid: { B: 1500 }, mode: 'shares', weights: { mA: 1, mB: 1, mC: 0.5 } });
+  d = put(d, 'expenses', { id: 'e3', title: 'Уха', amount: 1000, cur: 'KGS', paid: { C: 1000 }, mode: 'person', day: 1 });
+  const r = computeEvent(d);
+  near(r.families.C.share, 1000 + 300);           // C не было во 2-й день
+  near(r.families.A.share, 1000 + 600 + 500);
+  near(Object.values(r.families).reduce((s, f) => s + f.balance, 0), 0);
+});

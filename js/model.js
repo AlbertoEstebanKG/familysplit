@@ -51,11 +51,11 @@ export function todayISO() {
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 }
 
-export function newEvent({ name = '', currency = 'KGS', days = 1, startDate = todayISO() } = {}) {
+export function newEvent({ name = '', currency = 'KGS', days = 1, startDate = todayISO(), kind = 'families' } = {}) {
   return {
     id: eventId(),
     schema: SCHEMA,
-    meta: { name, currency, days, startDate, coefs: { ...DEFAULT_COEFS }, u: stamp() },
+    meta: { kind, name, currency, days, startDate, coefs: { ...DEFAULT_COEFS }, u: stamp() },
     families: {},
     members: {},
     expenses: {},
