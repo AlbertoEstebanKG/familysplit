@@ -14,7 +14,8 @@ async function rpc(fn, args) {
     method: 'POST',
     headers: {
       apikey: cfg.key,
-      Authorization: `Bearer ${cfg.key}`,
+      // Старые anon-ключи (JWT) передаются и в Authorization; новые publishable — только в apikey
+      ...(cfg.key.startsWith('eyJ') ? { Authorization: `Bearer ${cfg.key}` } : {}),
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(args),
