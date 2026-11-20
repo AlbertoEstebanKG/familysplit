@@ -1,6 +1,6 @@
 // FamilySplit — интерфейс. Без фреймворков: рендер в строки + делегирование событий.
 
-import { t, setLang, getLang, LANGS, locale, plural } from './i18n.js';
+import { t, setLang, getLang, LANGS, locale, plural, setVariant } from './i18n.js';
 import {
   CATEGORIES, CURRENCIES, DEFAULT_COEFS, FAMILY_COLORS,
   live, membersOf, put, remove, removeFamily, setMeta, uid, dayDates, todayISO, merge,
@@ -21,6 +21,9 @@ const S = {
 const $ = (sel, root = document) => root.querySelector(sel);
 const doc = () => (S.id ? store.loadEvent(S.id) : null);
 const myFamily = () => store.indexEntry(S.id)?.myFamily || null;
+/** Режим «Друзья»: каждый участник — один человек, без семей и возрастных долей. */
+const isFriends = (ev) => ev?.meta?.kind === 'friends';
+const FRIEND_MODES = ['person', 'shares', 'exact'];
 
 // ── Утилиты ──
 function esc(s) {
@@ -174,7 +177,9 @@ function maybeAskFamily() {
 function render() {
   const app = $('#app');
   document.documentElement.lang = getLang();
-  if (S.view === 'event' && doc()) app.innerHTML = renderEvent(doc());
+  const ev = S.view === 'event' ? doc() : null;
+  setVariant(isFriends(ev) ? 'friends' : null);
+  if (ev) app.innerHTML = renderEvent(ev);
   else { S.view = 'home'; app.innerHTML = renderHome(); }
   if (S.sheet) renderSheet();
 }
@@ -208,7 +213,7 @@ function renderHome() {
           <div class="event-name">${esc(ev.meta.name || t('untitled'))}</div>
           <div class="event-total">${money(r.total, ev.meta.currency)}</div>
         </div>
-        <div class="event-meta">${esc(range)}${range ? ' · ' : ''}${plural('families', fams)} · ${plural('people', ppl)}</div>
+        <div class="event-meta">${isFriends(ev) ? '🎣 ' : '👨‍👩‍👧 '}${esc(range)}${range ? ' · ' : ''}${isFriends(ev) ? '' : plural('families', fams) + ' · '}${plural('people', ppl)}</div>
         ${mine ? `<div class="event-mine">${mine}</div>` : ''}
       </button>`;
   }).join('');
@@ -227,7 +232,7 @@ function renderHome() {
           <div class="hero-emoji">🏕️👨‍👩‍👧‍👦🍉</div>
           <h1>${t('heroTitle')}</h1>
           <ul class="hero-list">
-            <li>${t('hero1')}</li><li>${t('hero2')}</li><li>${t('hero3')}</li><li>${t('hero4')}</li>
+            <li>${t('hero1')}</li><li>${t('hero2')}</li><li>${t('hero3')}</li><li>${t('hero4')}</li><li>${t('hero5')}</li>
           </ul>
         </div>`}
       <button class="btn primary big" data-a="newEvent">＋ ${t('newEvent')}</button>
@@ -248,7 +253,7 @@ function renderEvent(ev) {
   const r = computeEvent(ev);
   const tabs = [
     ['expenses', '💸', t('tab.expenses')],
-    ['families', '👨‍👩‍👧', t('tab.families')],
+    ['families', isFriends(ev) ? '🧑‍🤝‍🧑' : '👨‍👩‍👧', t('tab.families')],
     ['results', '📊', t('tab.results')],
   ];
   let body = '';
@@ -256,7 +261,7 @@ function renderEvent(ev) {
   else if (S.tab === 'families') body = renderFamilies(ev, r);
   else body = renderResults(ev, r);
   const fab = S.tab === 'expenses' ? `<button class="fab" data-a="addExpense" aria-label="${t('addExpense')}">＋</button>`
-    : S.tab === 'families' ? `<button class="fab" data-a="addFamily" aria-label="${t('addFamily')}">＋</button>` : '';
+    : S.tab === 'families' && !isFriends(ev) ? `<button class="fab" data-a="addFamily" aria-label="${t('addFamily')}">＋</button>` : '';
   return `
     <header class="top event-top">
       <button class="icon-btn" data-a="home" aria-label="${t('back')}">←</button>
@@ -338,7 +343,33 @@ function catBadge(ev, m) {
   return `<span class="cat cat-${m.cat}">${t('cat.' + m.cat)} · ${c}</span>`;
 }
 
+function renderFriends(ev) {
+  const fams = live(ev, 'families');
+  const n = ev.meta.days;
+  const mine = myFamily();
+  const quick = `<div class="quick-add">
+      <input type="text" id="quick-name" placeholder="${t('quickAddPh')}" maxlength="40" enterkeyhint="done" autocomplete="off">
+      <button class="btn primary" data-a="quickAdd">＋</button>
+    </div>`;
+  if (!fams.length) return quick + `<div class="empty"><div class="empty-ic">🎣</div>${t('emptyFamilies')}</div>`;
+  return quick + `<div class="friends-list">${fams.map((f) => {
+    const m = membersOf(ev, f.id)[0];
+    const days = m && Array.isArray(m.days) && n > 1 ? m.days.filter((d) => d < n) : null;
+    const partial = days && days.length < n;
+    const custom = m && typeof m.coef === 'number';
+    return `<button class="friend-row" data-a="editFamily" data-id="${f.id}">
+      <i class="dot big" style="background:${f.color || FAMILY_COLORS[0]}"></i>
+      <span class="friend-name">${esc(familyName(ev, f.id))}</span>
+      ${f.id === mine ? `<span class="pill">${t('myFamily')}</span>` : ''}
+      ${partial ? `<span class="days-badge">📅 ${days.map((d) => d + 1).join(', ')}</span>` : ''}
+      ${custom ? `<span class="cat cat-adult">× ${m.coef}</span>` : ''}
+      <span class="chev">›</span>
+    </button>`;
+  }).join('')}</div><div class="fab-space"></div>`;
+}
+
 function renderFamilies(ev, r) {
+  if (isFriends(ev)) return renderFriends(ev);
   const fams = live(ev, 'families');
   const coefs = { ...DEFAULT_COEFS, ...ev.meta.coefs };
   const legend = `<div class="legend">${CATEGORIES.map((c) => `<span class="cat cat-${c}">${t('cat.' + c)} = ${coefs[c]}</span>`).join('')}
@@ -426,7 +457,7 @@ function renderResults(ev, r) {
         <div class="bal-bar"><div class="${b >= 0 ? 'pos' : 'neg'}" style="width:${Math.min(50, (Math.abs(b) / maxAbs) * 50)}%;${b >= 0 ? 'left:50%' : 'right:50%'}"></div></div>
         <div class="bal-nums"><span>${t('paid')}: <b>${money(x.paid, cur)}</b></span><span>${t('share')}: <b>${money(x.share, cur)}</b></span>${x.sent ? `<span>${t('sentLbl')}: <b>${money(x.sent, cur)}</b></span>` : ''}${x.received ? `<span>${t('receivedLbl')}: <b>${money(x.received, cur)}</b></span>` : ''}</div>
         ${open ? `<div class="bal-detail">
-          ${members.length ? `<div class="mini-title">${t('byMember')}</div>${members.map((o) => `<div class="drow"><span>${esc(memberName(ev, o.m))}</span><span>${money(o.v, cur)}</span></div>`).join('')}` : ''}
+          ${members.length && !isFriends(ev) ? `<div class="mini-title">${t('byMember')}</div>${members.map((o) => `<div class="drow"><span>${esc(memberName(ev, o.m))}</span><span>${money(o.v, cur)}</span></div>`).join('')}` : ''}
           <div class="mini-title">${t('byExpense')}</div>
           ${items.map((o) => `<div class="drow"><span>${esc(o.e?.title || t('expense'))}</span><span>${money(o.v, cur)}</span></div>`).join('') || `<div class="muted">—</div>`}
         </div>` : ''}
@@ -502,7 +533,14 @@ const SHEETS = {
     return {
       title: t('newEvent'),
       body: `
-        ${field(t('eventName'), `<input type="text" data-bind="name" value="${esc(d.name)}" placeholder="${t('eventNamePh')}" autofocus maxlength="80">`)}
+        <div class="sub-title">${t('kindTitle')}</div>
+        <div class="kind-pick">
+          <button class="kind ${d.kind === 'families' ? 'on' : ''}" data-a="setKind" data-kind="families">
+            <span class="kind-ic">👨‍👩‍👧‍👦</span><b>${t('kindFamilies')}</b><small>${t('kindFamiliesHint')}</small></button>
+          <button class="kind ${d.kind === 'friends' ? 'on' : ''}" data-a="setKind" data-kind="friends">
+            <span class="kind-ic">🎣</span><b>${t('kindFriends')}</b><small>${t('kindFriendsHint')}</small></button>
+        </div>
+        ${field(t('eventName'), `<input type="text" data-bind="name" value="${esc(d.name)}" placeholder="${d.kind === 'friends' ? t('eventNamePhFriends') : t('eventNamePh')}" maxlength="80">`)}
         <div class="row2">
           ${field(t('startDate'), `<input type="date" data-bind="startDate" value="${esc(d.startDate)}">`)}
           ${field(t('daysCount'), stepper('days', d.days))}
@@ -533,12 +571,12 @@ const SHEETS = {
           ${field(t('daysCount'), stepper('days', d.days))}
         </div>
         ${field(t('baseCurrency'), `<select data-bind="currency" data-rerender="1">${currencyOptions(d.currency)}</select>`)}
-        <div class="sub-title">${t('coefsTitle')}</div>
+        ${isFriends(ev) ? '' : `<div class="sub-title">${t('coefsTitle')}</div>
         <p class="hint">${t('coefsHint')}</p>
         <div class="coefs">${CATEGORIES.map((c) => `
           <label class="coef"><span>${t('cat.' + c)}<small>${t('catAge.' + c)}</small></span>
           <input type="text" inputmode="decimal" data-bind="coefs.${c}" value="${d.coefs[c]}"></label>`).join('')}
-        </div>
+        </div>`}
         <div class="sub-title">${t('ratesTitle')}</div>
         ${rates || `<p class="hint">${t('ratesEmpty')}</p>`}
         <div class="rate-actions">
@@ -558,6 +596,26 @@ const SHEETS = {
     const d = S.draft;
     const ev = doc();
     const n = Math.max(1, ev.meta.days | 0);
+    if (isFriends(ev)) {
+      const m = d.members[0];
+      return {
+        title: d.isNew ? t('addFamily') : t('editFamily'),
+        body: `
+          ${field(t('familyName'), `<input type="text" data-bind="name" value="${esc(d.name)}" placeholder="${t('familyNamePh')}" maxlength="40" ${d.isNew ? 'autofocus' : ''}>`)}
+          <div class="colors">${FAMILY_COLORS.map((c) => `<button class="color ${d.color === c ? 'on' : ''}" style="background:${c}" data-a="setColor" data-c="${c}" aria-label="${c}"></button>`).join('')}</div>
+          ${n > 1 ? `<div class="sub-title">${t('presentDays')}</div><div class="days-row">${Array.from({ length: n }, (_, k) => {
+            const on = m.days == null || m.days.includes(k);
+            return `<button class="chip ${on ? 'on' : ''}" data-a="toggleDay" data-i="0" data-day="${k}">${esc(dayLabel(ev, k))}</button>`;
+          }).join('')}</div><p class="hint">${t('friendDaysHint')}</p>` : ''}
+          <details class="adv" ${m.coef != null && m.coef !== '' ? 'open' : ''}><summary>${t('customCoef')}</summary>
+            <input type="text" inputmode="decimal" data-bind="members.0.coef" value="${m.coef ?? ''}" placeholder="1">
+            <span class="hint">${t('customCoefHint')}</span>
+          </details>
+          <label class="check"><input type="checkbox" data-bind="isMine" data-type="bool" ${d.isMine ? 'checked' : ''}> ${t('thisIsMyFamily')}</label>
+          ${d.isNew ? '' : `<button class="btn ghost danger-text wide" data-a="deleteFamily">🗑 ${t('deleteFamily')}</button>`}`,
+        footer: `<button class="btn primary wide" data-a="saveFamily">${t('save')}</button>`,
+      };
+    }
     const coefs = { ...DEFAULT_COEFS, ...ev.meta.coefs };
     const members = d.members.map((m, i) => `
       <div class="medit">
@@ -612,11 +670,30 @@ const SHEETS = {
           <div class="remain" id="paid-remain"></div></div>`
       : `<div class="chips">${fams.map((f) => `<button class="chip fam ${d.payer === f.id ? 'on' : ''}" style="--fc:${famColor(ev, f.id)}" data-a="setPayer" data-id="${f.id}">${esc(familyName(ev, f.id))}</button>`).join('')}</div>`;
 
-    const modes = `<div class="seg">${MODES.map((m) => `<button class="${d.mode === m ? 'on' : ''}" data-a="setMode" data-mode="${m}">${t('modeShort.' + m)}</button>`).join('')}</div>
+    const friends = isFriends(ev);
+    const modes = `<div class="seg">${(friends ? FRIEND_MODES : MODES).map((m) => `<button class="${d.mode === m ? 'on' : ''}" data-a="setMode" data-mode="${m}">${t('modeShort.' + m)}</button>`).join('')}</div>
       <p class="hint">${t('modeHint.' + d.mode)}</p>`;
 
     let parts = '';
-    if (d.mode !== 'exact') {
+    if (d.mode !== 'exact' && friends) {
+      const sel = new Set(d.parts);
+      parts = `
+        <div class="sub-title">${t('whoTakesPart')}</div>
+        <div class="quick">
+          <button class="chip small" data-a="partsPreset" data-p="all">${t('preset.all')}</button>
+          <button class="chip small" data-a="partsPreset" data-p="none">${t('preset.none')}</button>
+        </div>
+        <div class="chips">${live(ev, 'members').filter((m) => ev.families[m.familyId] && !ev.families[m.familyId].del).map((m) => {
+          const absent = d.day != null && presence(ev, m, { day: d.day }) === 0;
+          return `<button class="chip ${sel.has(m.id) ? 'on' : ''} ${absent ? 'absent' : ''}" data-a="togglePart" data-id="${m.id}"><i class="dot" style="background:${famColor(ev, m.familyId)}"></i>${esc(familyName(ev, m.familyId))}${absent ? ' 🚫' : ''}</button>`;
+        }).join('')}</div>
+        ${d.day == null && n > 1 ? `<label class="check"><input type="checkbox" data-bind="byDays" data-type="bool" data-rerender="1" ${d.byDays ? 'checked' : ''}> ${t('byDays')}</label><p class="hint">${t('byDaysHint')}</p>` : ''}
+        ${d.mode === 'shares' ? `<div class="weights">${d.parts.map((mid) => {
+          const m = ev.members[mid]; if (!m || m.del) return '';
+          return `<div class="w-row"><span>${esc(familyName(ev, m.familyId))}</span>
+            <input type="text" inputmode="decimal" data-bind="weights.${mid}" value="${d.weights[mid] ?? memberCoef(ev, m)}"></div>`;
+        }).join('')}</div>` : ''}`;
+    } else if (d.mode !== 'exact') {
       const sel = new Set(d.parts);
       parts = `
         <div class="sub-title">${t('whoTakesPart')}</div>
@@ -736,7 +813,7 @@ function draftToExpense(d, ev) {
   if (d.multiPay) for (const [k, v] of Object.entries(d.paidMulti)) { if (num(v) > 0) paid[k] = num(v); }
   else if (d.payer) paid[d.payer] = amount;
   const weights = {};
-  if (d.mode === 'shares' && d.customW) for (const mid of d.parts) if (d.weights[mid] != null && d.weights[mid] !== '') weights[mid] = num(d.weights[mid]);
+  if (d.mode === 'shares' && (d.customW || isFriends(ev))) for (const mid of d.parts) if (d.weights[mid] != null && d.weights[mid] !== '') weights[mid] = num(d.weights[mid]);
   const exact = {};
   if (d.mode === 'exact') for (const [k, v] of Object.entries(d.exact)) if (num(v) > 0) exact[k] = num(v);
   return {
@@ -794,14 +871,32 @@ const A = {
   tab(el) { S.tab = el.dataset.tab; render(); $('#main')?.scrollTo(0, 0); },
   closeSheet() { closeSheet(); },
 
-  newEvent() { openSheet({ type: 'newEvent', draft: { name: '', startDate: todayISO(), days: 1, currency: 'KGS' } }); },
+  newEvent() { openSheet({ type: 'newEvent', draft: { kind: 'families', name: '', startDate: todayISO(), days: 1, currency: 'KGS' } }); },
+  setKind(el) { S.draft.kind = el.dataset.kind; renderSheet(); },
   createEvent() {
     const d = S.draft;
-    const ev = store.createEvent({ name: d.name.trim() || t('untitled'), startDate: d.startDate, days: Math.max(1, d.days | 0), currency: d.currency });
+    const ev = store.createEvent({ kind: d.kind, name: d.name.trim() || t('untitled'), startDate: d.startDate, days: Math.max(1, d.days | 0), currency: d.currency });
     closeSheet(false);
     S.tab = 'families';
     go('#/e/' + ev.id);
-    setTimeout(() => A.addFamily(), 150);
+    if (d.kind === 'friends') setTimeout(() => $('#quick-name')?.focus(), 150);
+    else setTimeout(() => A.addFamily(), 150);
+  },
+  quickAdd() {
+    const inp = $('#quick-name');
+    const name = inp?.value.trim();
+    if (!name) { inp?.focus(); return; }
+    let ev = doc();
+    const fams = live(ev, 'families');
+    const used = new Set(fams.map((f) => f.color));
+    const color = FAMILY_COLORS.find((c) => !used.has(c)) || FAMILY_COLORS[fams.length % FAMILY_COLORS.length];
+    const fid = uid(6);
+    ev = put(ev, 'families', { id: fid, name, color });
+    ev = put(ev, 'members', { id: uid(6), familyId: fid, name, cat: 'adult', days: null, coef: null, order: 0 });
+    save(ev);
+    render();
+    const again = $('#quick-name');
+    if (again) again.focus();
   },
   demo() {
     const ev = buildDemo();
@@ -886,7 +981,7 @@ const A = {
     openSheet({ type: 'family', draft: {
       id: uid(6), isNew: true, name: '', color,
       isMine: !myFamily() && !live(ev, 'families').length,
-      members: all(2).map(() => ({ id: uid(6), name: '', cat: 'adult', days: null, coef: null })),
+      members: all(isFriends(ev) ? 1 : 2).map(() => ({ id: uid(6), name: '', cat: 'adult', days: null, coef: null })),
     } });
   },
   editFamily(el) {
@@ -897,6 +992,7 @@ const A = {
       isMine: myFamily() === f.id,
       members: membersOf(ev, f.id).map((m) => ({ id: m.id, name: m.name || '', cat: m.cat, days: Array.isArray(m.days) ? [...m.days] : null, coef: m.coef ?? null })),
     } });
+    if (isFriends(ev) && !S.draft.members.length) { S.draft.members.push({ id: uid(6), name: '', cat: 'adult', days: null, coef: null }); renderSheet(); }
   },
   addMember(el) { S.draft.members.push({ id: uid(6), name: '', cat: el.dataset.cat, days: null, coef: null }); renderSheet(); },
   removeMember(el) { S.draft.members.splice(+el.dataset.i, 1); renderSheet(); },
@@ -914,6 +1010,10 @@ const A = {
   saveFamily() {
     const d = S.draft;
     let ev = doc();
+    if (isFriends(ev)) {
+      if (!d.name.trim()) { toast(t('enterName')); return; }
+      d.members = d.members.slice(0, 1).map((m) => ({ ...m, name: d.name.trim(), cat: 'adult' }));
+    }
     ev = put(ev, 'families', { id: d.id, name: d.name.trim(), color: d.color });
     const keep = new Set(d.members.map((m) => m.id));
     for (const m of membersOf(ev, d.id)) if (!keep.has(m.id)) ev = remove(ev, 'members', m.id);
@@ -949,7 +1049,7 @@ const A = {
     openSheet({ type: 'expense', draft: {
       id: uid(6), isNew: true, title: '', amount: '', cur: ev.meta.currency, day: null,
       payer: mine && ev.families[mine] ? mine : fams[0].id, multiPay: false, paidMulti: {},
-      mode: 'shares', parts: live(ev, 'members').map((m) => m.id), byDays: false, customW: false, weights: {}, exact: {},
+      mode: isFriends(ev) ? 'person' : 'shares', parts: live(ev, 'members').map((m) => m.id), byDays: false, customW: false, weights: {}, exact: {},
     } });
   },
   editExpense(el) {
@@ -975,7 +1075,12 @@ const A = {
     if (!d.multiPay) d.payer = Object.keys(d.paidMulti).sort((a, b) => num(d.paidMulti[b]) - num(d.paidMulti[a]))[0] || d.payer;
     renderSheet(); updatePreview();
   },
-  setMode(el) { S.draft.mode = el.dataset.mode; renderSheet(); updatePreview(); },
+  setMode(el) {
+    S.draft.mode = el.dataset.mode;
+    // у друзей «по долям» = сразу свои доли для каждого
+    if (isFriends(doc()) && S.draft.mode === 'shares') S.draft.customW = true;
+    renderSheet(); updatePreview();
+  },
   togglePart(el) {
     const d = S.draft; const id = el.dataset.id;
     d.parts = d.parts.includes(id) ? d.parts.filter((x) => x !== id) : [...d.parts, id];
@@ -1065,7 +1170,7 @@ const A = {
 function resultsText(ev) {
   const r = computeEvent(ev);
   const cur = ev.meta.currency;
-  const lines = [`💰 ${ev.meta.name || t('untitled')}`, `${t('total')}: ${money(r.total, cur)} · ${plural('families', live(ev, 'families').length)} · ${plural('people', r.people)}`, ''];
+  const lines = [`💰 ${ev.meta.name || t('untitled')}`, `${t('total')}: ${money(r.total, cur)} · ${isFriends(ev) ? '' : plural('families', live(ev, 'families').length) + ' · '}${plural('people', r.people)}`, ''];
   lines.push(t('whoPaysWhom') + ':');
   if (!r.transfers.length) lines.push('✓ ' + t('allSettled'));
   for (const x of r.transfers) lines.push(`• ${familyName(ev, x.from)} → ${familyName(ev, x.to)}: ${money(x.amount, cur)}`);
@@ -1137,6 +1242,7 @@ document.addEventListener('change', (e) => {
   updatePreview();
 });
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target?.id === 'quick-name') { e.preventDefault(); A.quickAdd(); return; }
   if (e.key === 'Escape' && S.sheet && !$('#dialog-root').innerHTML) closeSheet();
 });
 
