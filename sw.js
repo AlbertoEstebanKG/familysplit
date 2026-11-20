@@ -1,5 +1,5 @@
 // Service worker: приложение работает офлайн. При выпуске новой версии увеличьте VERSION.
-const VERSION = 'familysplit-v2.2.0';
+const VERSION = 'familysplit-v2.3.0';
 const ASSETS = [
   './',
   './index.html',
