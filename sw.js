@@ -1,5 +1,5 @@
 // Service worker: приложение работает офлайн. При выпуске новой версии увеличьте VERSION.
-const VERSION = 'familysplit-v2.1.0';
+const VERSION = 'familysplit-v2.1.1';
 const ASSETS = [
   './',
   './index.html',
@@ -35,7 +35,13 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache: 'reload' — берём файлы с сервера, минуя HTTP-кэш браузера, иначе новая версия
+  // могла бы закэшировать старые файлы.
+  e.waitUntil(
+    caches.open(VERSION)
+      .then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
@@ -54,7 +60,7 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.open(VERSION).then(async (cache) => {
       const cached = await cache.match(e.request, { ignoreSearch: true });
-      const network = fetch(e.request)
+      const network = fetch(e.request, { cache: 'no-cache' })
         .then((res) => { if (res.ok) cache.put(e.request, res.clone()); return res; })
         .catch(() => cached || cache.match('./index.html'));
       return cached || network;
