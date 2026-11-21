@@ -24,7 +24,15 @@ export const CURRENCIES = {
   GEL: { symbol: '₾', decimals: 2 },
 };
 
-export const FAMILY_COLORS = ['#d4870a', '#1e8c5a', '#2f6fd6', '#c0392b', '#8e44ad', '#16a085', '#d35400', '#7f8c8d', '#b8860b', '#2c3e50'];
+// Цвета-метки семей. Без красного, зелёного и оранжевого: эти цвета в интерфейсе означают долг, переплату и акцент.
+export const FAMILY_COLORS = ['#4a78d0', '#8a63cf', '#2a9a98', '#cc5f97', '#64748b', '#9c7a52', '#5a5fc8', '#3d9cc4', '#9b5a86', '#7b8a3a'];
+// Цвета первой версии палитры — сопоставляем с новыми по номеру, чтобы старые мероприятия тоже выглядели единообразно.
+export const LEGACY_FAMILY_COLORS = ['#d4870a', '#1e8c5a', '#2f6fd6', '#c0392b', '#8e44ad', '#16a085', '#d35400', '#7f8c8d', '#b8860b', '#2c3e50'];
+export function familyColor(color) {
+  const i = LEGACY_FAMILY_COLORS.indexOf(color);
+  if (i >= 0) return FAMILY_COLORS[i];
+  return color || FAMILY_COLORS[0];
+}
 
 let lastStamp = 0;
 /** Монотонная метка времени: даже два изменения в одну миллисекунду упорядочены. */

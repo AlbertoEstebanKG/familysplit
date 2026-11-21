@@ -3,7 +3,7 @@
 import { t, setLang, getLang, LANGS, locale, plural, setVariant } from './i18n.js';
 import {
   CATEGORIES, CURRENCIES, DEFAULT_COEFS, FAMILY_COLORS,
-  live, membersOf, put, remove, removeFamily, setMeta, uid, dayDates, todayISO, merge,
+  live, membersOf, put, remove, removeFamily, setMeta, uid, dayDates, todayISO, merge, familyColor,
 } from './model.js';
 import { computeEvent, splitExpense, memberCoef, presence, rateOf, decimalsOf, MODES } from './calc.js';
 import * as store from './store.js';
@@ -62,7 +62,7 @@ function memberName(ev, m) {
   return t('cat.' + m.cat) + (same.length > 1 ? ' ' + idx : '');
 }
 function famColor(ev, fid) {
-  return ev.families[fid]?.color || FAMILY_COLORS[0];
+  return familyColor(ev.families[fid]?.color);
 }
 function toast(msg) {
   const el = $('#toast');
@@ -358,7 +358,7 @@ function renderFriends(ev) {
     const partial = days && days.length < n;
     const custom = m && typeof m.coef === 'number';
     return `<button class="friend-row" data-a="editFamily" data-id="${f.id}">
-      <i class="dot big" style="background:${f.color || FAMILY_COLORS[0]}"></i>
+      <i class="dot big" style="background:${familyColor(f.color)}"></i>
       <span class="friend-name">${esc(familyName(ev, f.id))}</span>
       ${f.id === mine ? `<span class="pill">${t('myFamily')}</span>` : ''}
       ${partial ? `<span class="days-badge">📅 ${days.map((d) => d + 1).join(', ')}</span>` : ''}
@@ -384,9 +384,9 @@ function renderFamilies(ev, r) {
     const ms = membersOf(ev, f.id);
     const w = ms.reduce((s, m) => s + memberCoef(ev, m), 0);
     return `
-      <button class="fam-card" data-a="editFamily" data-id="${f.id}" style="--fc:${f.color || FAMILY_COLORS[0]}">
+      <button class="fam-card" data-a="editFamily" data-id="${f.id}" style="--fc:${familyColor(f.color)}">
         <div class="fam-head">
-          <div class="fam-name"><i class="dot big" style="background:${f.color || FAMILY_COLORS[0]}"></i>${esc(familyName(ev, f.id))}
+          <div class="fam-name"><i class="dot big" style="background:${familyColor(f.color)}"></i>${esc(familyName(ev, f.id))}
             ${f.id === mine ? `<span class="pill">${t('myFamily')}</span>` : ''}</div>
           <div class="fam-w">${t('sharesN', { n: +w.toFixed(2) })}</div>
         </div>
@@ -993,7 +993,7 @@ const A = {
     const ev = doc();
     const f = ev.families[el.dataset.id];
     openSheet({ type: 'family', draft: {
-      id: f.id, isNew: false, name: f.name || '', color: f.color || FAMILY_COLORS[0],
+      id: f.id, isNew: false, name: f.name || '', color: familyColor(f.color),
       isMine: myFamily() === f.id,
       members: membersOf(ev, f.id).map((m) => ({ id: m.id, name: m.name || '', cat: m.cat, days: Array.isArray(m.days) ? [...m.days] : null, coef: m.coef ?? null })),
     } });
