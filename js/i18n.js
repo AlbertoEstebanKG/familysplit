@@ -4,6 +4,10 @@
 export const LANGS = ['ru', 'ky', 'en'];
 
 const RU = {
+  stepOf: 'Шаг {n} из {total}',
+  kindQuestion: 'Кто участвует?',
+  kindFamiliesEx: 'Например: Иссык-Куль, дача, праздник с детьми',
+  kindFriendsEx: 'Например: рыбалка, баня, шашлыки, кафе',
   date: 'Дата',
   severalDays: '＋ Несколько дней',
   oneDay: 'Один день',
@@ -235,6 +239,10 @@ const RU = {
 };
 
 const EN = {
+  stepOf: 'Step {n} of {total}',
+  kindQuestion: 'Who is taking part?',
+  kindFamiliesEx: 'E.g. a lake trip, country house, holiday with kids',
+  kindFriendsEx: 'E.g. fishing, sauna, BBQ, a night out',
   date: 'Date',
   severalDays: '＋ Several days',
   oneDay: 'Single day',
@@ -466,6 +474,10 @@ const EN = {
 };
 
 const KY = {
+  stepOf: '{total} кадамдын {n}-кадамы',
+  kindQuestion: 'Ким катышат?',
+  kindFamiliesEx: 'Мисалы: Ысык-Көл, дача, балдар менен майрам',
+  kindFriendsEx: 'Мисалы: балык уулоо, мончо, шашлык, кафе',
   date: 'Күнү',
   severalDays: '＋ Бир нече күн',
   oneDay: 'Бир күн',
