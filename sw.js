@@ -1,5 +1,5 @@
 // Service worker: приложение работает офлайн. При выпуске новой версии увеличьте VERSION.
-const VERSION = 'familysplit-v2.3.0';
+const VERSION = 'familysplit-v2.4.0';
 const ASSETS = [
   './',
   './index.html',
@@ -26,12 +26,6 @@ const ASSETS = [
   "./fonts/inter-latin-600-normal.woff2",
   "./fonts/inter-latin-700-normal.woff2",
   "./fonts/inter-latin-800-normal.woff2",
-  "./fonts/unbounded-cyrillic-700-normal.woff2",
-  "./fonts/unbounded-cyrillic-900-normal.woff2",
-  "./fonts/unbounded-cyrillic-ext-700-normal.woff2",
-  "./fonts/unbounded-cyrillic-ext-900-normal.woff2",
-  "./fonts/unbounded-latin-700-normal.woff2",
-  "./fonts/unbounded-latin-900-normal.woff2"
 ];
 
 self.addEventListener('install', (e) => {
