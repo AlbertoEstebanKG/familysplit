@@ -557,7 +557,7 @@ const SHEETS = {
         body: `
           <p class="step-label">${t('stepOf', { n: 1, total: 2 })}</p>
           <h3 class="step-q">${t('kindQuestion')}</h3>
-          <div class="kind-cards">${card('families', '👨‍👩‍👧‍👦')}${card('friends', '🎣')}</div>`,
+          <div class="kind-cards">${card('friends', '🎣')}${card('families', '👨‍👩‍👧‍👦')}</div>`,
       };
     }
     // Шаг 2: название, дата, валюта
