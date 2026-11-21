@@ -540,17 +540,38 @@ function stepper(bind, value, min = 1, max = 60) {
 const SHEETS = {
   newEvent() {
     const d = S.draft;
+    // Шаг 1: отдельный экран выбора, кто участвует
+    if (d.step === 'kind') {
+      const card = (kind, ic) => `
+        <button class="kind-card ${d.kind === kind ? 'on' : ''}" data-a="setKind" data-kind="${kind}">
+          <span class="kind-ic">${ic}</span>
+          <span class="kind-text">
+            <b>${t(kind === 'friends' ? 'kindFriends' : 'kindFamilies')}</b>
+            <span>${t(kind === 'friends' ? 'kindFriendsHint' : 'kindFamiliesHint')}</span>
+            <small>${t(kind === 'friends' ? 'kindFriendsEx' : 'kindFamiliesEx')}</small>
+          </span>
+          <span class="chev">›</span>
+        </button>`;
+      return {
+        title: t('newEvent'),
+        body: `
+          <p class="step-label">${t('stepOf', { n: 1, total: 2 })}</p>
+          <h3 class="step-q">${t('kindQuestion')}</h3>
+          <div class="kind-cards">${card('families', '👨‍👩‍👧‍👦')}${card('friends', '🎣')}</div>`,
+      };
+    }
+    // Шаг 2: название, дата, валюта
+    const isFr = d.kind === 'friends';
     return {
       title: t('newEvent'),
       body: `
-        <div class="sub-title">${t('kindTitle')}</div>
-        <div class="kind-pick">
-          <button class="kind ${d.kind === 'families' ? 'on' : ''}" data-a="setKind" data-kind="families">
-            <span class="kind-ic">👨‍👩‍👧‍👦</span><b>${t('kindFamilies')}</b><small>${t('kindFamiliesHint')}</small></button>
-          <button class="kind ${d.kind === 'friends' ? 'on' : ''}" data-a="setKind" data-kind="friends">
-            <span class="kind-ic">🎣</span><b>${t('kindFriends')}</b><small>${t('kindFriendsHint')}</small></button>
+        <p class="step-label">${t('stepOf', { n: 2, total: 2 })}</p>
+        <div class="kind-chosen">
+          <span class="kind-ic small">${isFr ? '🎣' : '👨‍👩‍👧‍👦'}</span>
+          <b>${t(isFr ? 'kindFriends' : 'kindFamilies')}</b>
+          <button class="link small" data-a="backToKind">${t('change')}</button>
         </div>
-        ${field(t('eventName'), `<input type="text" data-bind="name" value="${esc(d.name)}" placeholder="${d.kind === 'friends' ? t('eventNamePhFriends') : t('eventNamePh')}" maxlength="80">`)}
+        ${field(t('eventName'), `<input type="text" data-bind="name" value="${esc(d.name)}" placeholder="${isFr ? t('eventNamePhFriends') : t('eventNamePh')}" maxlength="80" autofocus>`)}
         ${dateFields(d)}
         ${field(t('baseCurrency'), `<select data-bind="currency">${currencyOptions(d.currency)}</select>`, t('baseCurrencyHint'))}`,
       footer: `<button class="btn primary wide" data-a="createEvent">${t('create')}</button>`,
@@ -875,8 +896,13 @@ const A = {
   tab(el) { S.tab = el.dataset.tab; render(); $('#main')?.scrollTo(0, 0); },
   closeSheet() { closeSheet(); },
 
-  newEvent() { openSheet({ type: 'newEvent', draft: { kind: 'families', name: '', startDate: todayISO(), days: 1, currency: 'KGS' } }); },
-  setKind(el) { S.draft.kind = el.dataset.kind; renderSheet(); },
+  newEvent() { openSheet({ type: 'newEvent', draft: { step: 'kind', kind: null, name: '', startDate: todayISO(), days: 1, currency: 'KGS' } }); },
+  setKind(el) {
+    S.draft.kind = el.dataset.kind;
+    S.draft.step = 'details';
+    renderSheet(true);
+  },
+  backToKind() { S.draft.step = 'kind'; renderSheet(); },
   toggleMultiDay() { S.draft.days = S.draft.days > 1 ? 1 : 2; renderSheet(); },
   createEvent() {
     const d = S.draft;
